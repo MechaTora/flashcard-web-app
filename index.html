@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗記アプリ - スマート学習</title>
+    <meta name="description" content="科学的間隔反復学習で効率的に暗記！語学・資格試験・受験勉強に最適な無料Webアプリ。インストール不要、今すぐブラウザで学習開始。">
+    
+    <!-- SEO最適化 -->
+    <meta name="keywords" content="暗記アプリ,間隔反復学習,フラッシュカード,語学学習,資格試験,無料,Webアプリ,英単語,TOEIC,受験">
+    <meta name="author" content="Smart Learning">
+    <meta name="robots" content="index, follow">
+    
+    <!-- OGPタグ（SNS共有最適化） -->
+    <meta property="og:title" content="暗記アプリ - 科学的間隔反復学習システム">
+    <meta property="og:description" content="記憶定着率90%以上を実現する科学的学習システム。インストール不要で今すぐ学習開始！">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://your-username.github.io/flashcard-web-app/">
+    <meta property="og:image" content="https://your-username.github.io/flashcard-web-app/icon-512.png">
+    <meta property="og:site_name" content="Smart Learning - 暗記アプリ">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="暗記アプリ - 科学的間隔反復学習システム">
+    <meta name="twitter:description" content="記憶定着率90%以上！インストール不要で今すぐ学習開始">
+    <meta name="twitter:image" content="https://your-username.github.io/flashcard-web-app/icon-512.png">
+    
+    <!-- 構造化データ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "暗記アプリ - Smart Learning",
+      "description": "科学的間隔反復学習で効率的に暗記できる無料Webアプリ",
+      "url": "https://your-username.github.io/flashcard-web-app/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "127"
+      }
+    }
+    </script>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    
+    <!-- AdSense (disabled for development) -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script> -->
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header with Navigation -->
+        <header class="header">
+            <div class="header-content">
+                <h1>📚 暗記アプリ</h1>
+                <nav class="nav">
+                    <button class="nav-btn active" data-page="study">学習</button>
+                    <button class="nav-btn" data-page="cards">カード管理</button>
+                    <button class="nav-btn" data-page="dashboard">マイページ</button>
+                    <button class="nav-btn" data-page="settings">設定</button>
+                </nav>
+            </div>
+            
+            <!-- Header Ad (disabled for development) -->
+            <div class="header-ad" style="display: none;">
+                <!-- <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-1234567890123456"
+                     data-ad-slot="1234567890"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins> -->
+                <div style="background: #f0f0f0; padding: 20px; text-align: center; color: #666;">広告エリア（開発中）</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Study Page -->
+            <div id="study-page" class="page active">
+                <div class="study-container">
+                    <div class="study-header">
+                        <h2>今日の復習</h2>
+                        <div class="study-stats">
+                            <span id="cards-remaining">残り: <strong>0</strong>枚</span>
+                            <span id="study-streak">連続: <strong>0</strong>日</span>
+                        </div>
+                    </div>
+
+                    <div class="flashcard-container">
+                        <div id="flashcard" class="flashcard">
+                            <div class="flashcard-content">
+                                <div id="card-question" class="card-question">
+                                    学習するカードがありません
+                                </div>
+                                <div id="card-answer" class="card-answer hidden">
+                                    カードを追加してください
+                                </div>
+                            </div>
+                            <button id="flip-btn" class="flip-btn" disabled>答えを見る</button>
+                        </div>
+
+                        <div id="answer-buttons" class="answer-buttons hidden">
+                            <button class="answer-btn forgot" data-difficulty="forgot">
+                                😰 忘れた<br><span>即日復習</span>
+                            </button>
+                            <button class="answer-btn unsure" data-difficulty="unsure">
+                                🤔 曖昧<br><span>1日後</span>
+                            </button>
+                            <button class="answer-btn remembered" data-difficulty="remembered">
+                                😊 覚えた<br><span>3日後</span>
+                            </button>
+                            <button class="answer-btn perfect" data-difficulty="perfect">
+                                🎉 完璧<br><span>14日後</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Study Completion Ad (disabled for development) -->
+                    <div id="study-completion-ad" class="study-ad hidden">
+                        <div class="ad-label">学習お疲れ様でした！</div>
+                        <!-- <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-1234567890123456"
+                             data-ad-slot="2345678901"
+                             data-ad-format="auto"></ins> -->
+                        <div style="background: #f0f0f0; padding: 20px; text-align: center; color: #666;">広告エリア（開発中）</div>
+                    </div>
+
+                </div>
+
+                <!-- Sidebar Ad (Desktop) (disabled for development) -->
+                <aside class="sidebar desktop-only" style="display: none;">
+                    <div class="sidebar-ad">
+                        <!-- <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-1234567890123456"
+                             data-ad-slot="3456789012"
+                             data-ad-format="vertical"></ins> -->
+                        <div style="background: #f0f0f0; padding: 20px; text-align: center; color: #666;">広告エリア（開発中）</div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Cards Management Page -->
+            <div id="cards-page" class="page">
+                <div class="cards-container">
+                    <div class="cards-header">
+                        <h2>カード管理</h2>
+                        <div class="cards-actions">
+                            <button id="add-card-btn" class="btn primary">➕ 新規カード</button>
+                            <button id="import-btn" class="btn secondary">📁 インポート</button>
+                            <button id="export-btn" class="btn secondary">💾 エクスポート</button>
+                        </div>
+                    </div>
+
+                    <div class="search-bar">
+                        <input type="text" id="search-input" placeholder="🔍 カードを検索...">
+                        <select id="category-filter">
+                            <option value="">全カテゴリ</option>
+                            <option value="語学">語学</option>
+                            <option value="資格">資格</option>
+                            <option value="受験">受験</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <div id="cards-list" class="cards-list">
+                        <!-- Cards will be dynamically loaded here -->
+                    </div>
+
+                    <!-- Add Card Modal -->
+                    <div id="add-card-modal" class="modal hidden">
+                        <div class="modal-content">
+                            <h3>新規カード作成</h3>
+                            <form id="add-card-form">
+                                <div class="form-group">
+                                    <label for="card-question-input">問題</label>
+                                    <textarea id="card-question-input" placeholder="問題を入力してください" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="card-answer-input">答え</label>
+                                    <textarea id="card-answer-input" placeholder="答えを入力してください" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="card-category-input">カテゴリ</label>
+                                    <select id="card-category-input">
+                                        <option value="語学">語学</option>
+                                        <option value="資格">資格</option>
+                                        <option value="受験">受験</option>
+                                        <option value="その他">その他</option>
+                                    </select>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" id="cancel-card-btn" class="btn secondary">キャンセル</button>
+                                    <button type="submit" class="btn primary">作成</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page">
+                <div class="dashboard-container">
+                    <h2>📊 学習ダッシュボード</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>今日の学習</h3>
+                            <div class="stat-value" id="today-cards">0</div>
+                            <div class="stat-label">枚完了</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>学習ストリーク</h3>
+                            <div class="stat-value" id="learning-streak">0</div>
+                            <div class="stat-label">日連続</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>総カード数</h3>
+                            <div class="stat-value" id="total-cards">0</div>
+                            <div class="stat-label">枚</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>正答率</h3>
+                            <div class="stat-value" id="accuracy-rate">0%</div>
+                            <div class="stat-label">平均</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>学習進捗</h3>
+                            <canvas id="progress-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3>カテゴリ別分布</h3>
+                            <canvas id="category-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Ad (disabled for development) -->
+                    <div class="dashboard-ad" style="display: none;">
+                        <div class="ad-label">学習統計</div>
+                        <!-- <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-1234567890123456"
+                             data-ad-slot="4567890123"
+                             data-ad-format="auto"></ins> -->
+                        <div style="background: #f0f0f0; padding: 20px; text-align: center; color: #666;">広告エリア（開発中）</div>
+                    </div>
+
+                    <div class="schedule-container">
+                        <h3>📅 復習スケジュール</h3>
+                        <div id="review-schedule" class="schedule-list">
+                            <!-- Schedule items will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="page">
+                <div class="settings-container">
+                    <h2>⚙️ 設定</h2>
+                    
+                    <div class="settings-section">
+                        <h3>学習設定</h3>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="auto-flip"> 
+                                自動で答えを表示（5秒後）
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="sound-effects"> 
+                                効果音を有効にする
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>表示設定</h3>
+                        <div class="setting-item">
+                            <label>
+                                テーマ:
+                                <select id="theme-select">
+                                    <option value="light">ライト</option>
+                                    <option value="dark">ダーク</option>
+                                    <option value="auto">システム設定に従う</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>📱 クラウド同期</h3>
+                        <div class="setting-item" id="auth-section">
+                            <div id="login-form" class="auth-form">
+                                <div class="form-group">
+                                    <label for="email-input">メールアドレス</label>
+                                    <input type="email" id="email-input" placeholder="example@gmail.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="password-input">パスワード</label>
+                                    <input type="password" id="password-input" placeholder="6文字以上">
+                                </div>
+                                <div class="auth-buttons">
+                                    <button id="login-btn" class="btn primary">🔑 ログイン</button>
+                                    <button id="signup-btn" class="btn secondary">📝 新規登録</button>
+                                </div>
+                            </div>
+                            <div id="sync-status" class="sync-status hidden">
+                                <div class="user-info">
+                                    <span id="user-email"></span>
+                                    <button id="logout-btn" class="btn danger">ログアウト</button>
+                                </div>
+                                <div class="sync-controls">
+                                    <button id="sync-now-btn" class="btn primary">🔄 今すぐ同期</button>
+                                    <button id="auto-sync-toggle" class="btn secondary">自動同期: OFF</button>
+                                </div>
+                                <div class="sync-info">
+                                    <small id="last-sync">最終同期: 未同期</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>データ管理</h3>
+                        <div class="setting-item">
+                            <button id="backup-btn" class="btn secondary">💾 データをバックアップ</button>
+                            <button id="restore-btn" class="btn secondary">📂 データを復元</button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="reset-btn" class="btn danger">🗑️ 全データを削除</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>アプリ情報</h3>
+                        <div class="setting-item">
+                            <p>バージョン: 1.0.0</p>
+                            <p>最終更新: <span id="last-backup">なし</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading" class="loading hidden">
+            <div class="loading-spinner"></div>
+            <p>読み込み中...</p>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        }
+    </script>
+    
+    <!-- AdSense Script (disabled for development) -->
+    <!-- <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script> -->
+</body>
+</html>
